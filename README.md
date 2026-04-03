@@ -210,3 +210,20 @@ Script handles missing values gracefully:
 - Console output shows progress and current file
 - Full log saved to `$OUTPUT_DIR/log.txt`
 - Geocoding cache saved to `$OUTPUT_DIR/geocode_cache.txt`
+
+
+## Contributing
+
+Report issues or suggest features via [GitHub Issues](https://github.com/j15k/photoframer/issues).
+
+
+## License
+
+MIT License - Free for personal and commercial use.
+
+
+## Credits
+
+- Reverse geocoding: [Nominatim](https://nominatim.org/) (OpenStreetMap)
+- Image processing: [ImageMagick](https://imagemagick.org/)
+- Metadata: [ExifTool](https://exiftool.org/) by Phil Harvey
