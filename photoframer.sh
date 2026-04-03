@@ -19,7 +19,7 @@ LOG_FILE="$OUTPUT_DIR/output.txt"
 
 # Nominatim API configuration
 NOMINATIM_EMAIL="your-email@example.com"  # Replace with your email
-NOMINATIM_USER_AGENT="ImageFramingScript/1.0"
+NOMINATIM_USER_AGENT="PhotoFramer/1.0"
 CACHE_FILE="$OUTPUT_DIR/geocode_cache.txt"
 SHOW_COORDINATES_AS_FALLBACK="false"
 NOMINATIM_ACCEPT_LANGUAGE="en"  # Request English results from Nominatim
