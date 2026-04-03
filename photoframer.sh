@@ -368,9 +368,21 @@ for img in "$INPUT_DIR"/*.jpg; do
         fi
         
         # Get EXIF data - EXPOSURE
-        exposure=$(identify -format "%[EXIF:ExposureTime]" "$img" 2>/dev/null)
-        if [ -n "$exposure" ] && [ "$exposure" != "null" ]; then
-            exposure="${exposure}s"
+        exposure=$(exiftool -ExposureTime -s3 "$img" 2>/dev/null | head -1)
+        if [ -n "$exposure" ] && [ "$exposure" != "null" ] && [ "$exposure" != "-" ]; then
+            # exiftool often returns fractions like "1/20"
+            if [[ "$exposure" == *"/"* ]]; then
+                exposure="${exposure}s"
+            else
+                # If it's a decimal, try to convert to fraction
+                exposure_decimal="$exposure"
+                if (( $(echo "$exposure_decimal < 1" | bc -l) )); then
+                    denominator=$(echo "scale=0; 1 / $exposure_decimal + 0.5" | bc)
+                    exposure="1/${denominator}s"
+                else
+                    exposure="${exposure_decimal}s"
+                fi
+            fi
         else
             exposure="--"
         fi
