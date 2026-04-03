@@ -6,6 +6,7 @@ set -euo pipefail
 
 INPUT_DIR="/home/user/Pictures/"
 OUTPUT_DIR="/home/user/Pictures/framed"
+SUPPORTED_EXTENSIONS="jpg jpeg JPG JPEG png PNG"
 AVATAR="/home/user/Pictures/avatars/avatar.png"
 FONT="/home/user/.local/share/fonts/font.ttf"
 FONT_SIZE=26
