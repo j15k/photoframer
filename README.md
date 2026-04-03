@@ -1,3 +1,6 @@
+![Header image including the name PhotoFramer and an examples of a framed photograph](assets/images/photoframer.png)
+
+
 # PhotoFramer
 
 PhotoFramer is a Bash shell script to add professional frames with EXIF metadata and geolocation to your photos.
