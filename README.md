@@ -1,6 +1,6 @@
 # PhotoFramer
 
-Add professional frames with EXIF metadata and geolocation to your photos.
+PhotoFramer is a Bash shell script to add professional frames with EXIF metadata and geolocation to your photos.
 
 
 ## Features
@@ -117,7 +117,17 @@ sudo apt install imagemagick exiftool bc curl jq coreutils
 | `CACHE_FILE` | Cache file location (avoid repeated API calls) |
 
 
-## Example
+## Examples
+
+
+### Framed images
+
+You can find many examples of images framed with PhotoFramer here:
+
+- [Pixelfed: @j15k](https://pixelfed.social/j15k)
+- [Mastodon: @j15k](https://mastodon.social/@j15k)
+- [Bluesky: @j15k.com](https://bsky.app/profile/j15k.com)
+
 
 ### Before framing
 
