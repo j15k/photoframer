@@ -16,7 +16,7 @@ FRAME_PADDING=50
 BOTTOM_FRAME_HEIGHT=200
 TOP_FRAME_HEIGHT=50
 AVATAR_SIZE=100
-LOG_FILE="$OUTPUT_DIR/output.txt"
+LOG_FILE="$OUTPUT_DIR/log.txt"
 
 # Nominatim API configuration
 NOMINATIM_EMAIL="your-email@example.com"  # Replace with your email
@@ -24,6 +24,9 @@ NOMINATIM_USER_AGENT="PhotoFramer/1.0"
 CACHE_FILE="$OUTPUT_DIR/geocode_cache.txt"
 SHOW_COORDINATES_AS_FALLBACK="false"
 NOMINATIM_ACCEPT_LANGUAGE="en"  # Request English results from Nominatim
+
+# Progress bar configuration
+SHOW_PROGRESS_BAR="true"  # Set to "false" to disable progress bar
 
 # Calculate vertical center position for bottom frame elements
 # Avatar height: 80px, vertically centered in the 140px bottom frame
@@ -108,8 +111,7 @@ echo ""
 # Check if INPUT_DIR equals OUTPUT_DIR
 if [ "$(realpath "$INPUT_DIR")" = "$(realpath "$OUTPUT_DIR")" ]; then
     echo "ERROR: Input and output directories are the same!" >&2
-    echo "This would overwrite your original images." >&2
-    echo "Please use different directories." >&2
+    echo "This would overwrite your original images. Please use different directories." >&2
     exit 1
 fi
 
@@ -126,6 +128,43 @@ log() {
 debug() {
     echo "$1" >&2
     echo "$1" >> "$LOG_FILE"
+}
+
+# Function to display progress bar
+show_progress() {
+    local current=$1
+    local total=$2
+    local start_time=$3
+    
+    if [ "$SHOW_PROGRESS_BAR" != "true" ]; then
+        return
+    fi
+    
+    local percent=$((current * 100 / total))
+    local filled=$((percent / 2))
+    local empty=$((50 - filled))
+    
+    # Calculate ETA
+    local current_time=$(date +%s)
+    local elapsed=$((current_time - start_time))
+    local eta=0
+    
+    if [ $current -gt 0 ]; then
+        local avg_time=$(echo "scale=2; $elapsed / $current" | bc)
+        local remaining=$((total - current))
+        eta=$(echo "scale=0; $avg_time * $remaining" | bc)
+    fi
+    
+    # Format ETA as mm:ss
+    local eta_min=$((eta / 60))
+    local eta_sec=$((eta % 60))
+    local eta_formatted=$(printf "%02d:%02d" $eta_min $eta_sec)
+    
+    # Build progress bar
+    printf "\rProgress: ["
+    for ((i=0; i<filled; i++)); do printf "#"; done
+    for ((i=0; i<empty; i++)); do printf " "; done
+    printf "] %3d%% (%d/%d) ETA: %s" $percent $current $total "$eta_formatted"
 }
 
 # Function to convert DMS to decimal degrees
@@ -218,7 +257,7 @@ get_location() {
 }
 
 # ============================================================================
-# MAIN SCRIPT
+# PHOTFRAMER MAIN SCRIPT
 # ============================================================================
 
 mkdir -p "$OUTPUT_DIR"
@@ -236,18 +275,43 @@ else
     log "  Avatar DPI detected: ${AVATAR_DPI} DPI"
 fi
 
-log "=== Image Framing Script Started ==="
+# Count total files to process
+log "Scanning for files..."
+total_files=0
+for img in "$INPUT_DIR"/*; do
+    if [ -f "$img" ]; then
+        ext="${img##*.}"
+        ext_lower=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+        extensions_lower=$(printf "%s\n" "${SUPPORTED_EXTENSIONS[@]}" | tr '[:upper:]' '[:lower:]' | tr '\n' '|')
+        extensions_lower="${extensions_lower%|}"
+        if [[ "$extensions_lower" == *"$ext_lower"* ]]; then
+            total_files=$((total_files + 1))
+        fi
+    fi
+done
+
+log "=== PhotoFramer Script Started ==="
 log "Input directory: $INPUT_DIR"
 log "Output directory: $OUTPUT_DIR"
 log "Supported extensions: ${SUPPORTED_EXTENSIONS[*]}"
+log "Total files to process: $total_files"
 log "Log file: $LOG_FILE"
 log "Geocoding cache: $CACHE_FILE"
 log "Avatar DPI: $AVATAR_DPI"
 log ""
 
+if [ $total_files -eq 0 ]; then
+    log "No matching files found. Exiting."
+    exit 0
+fi
+
 # Create lowercase version for case-insensitive matching
 extensions_lower=$(printf "%s\n" "${SUPPORTED_EXTENSIONS[@]}" | tr '[:upper:]' '[:lower:]' | tr '\n' '|')
 extensions_lower="${extensions_lower%|}"  # Remove trailing pipe
+
+# Initialize progress tracking
+current_file=0
+start_time=$(date +%s)
 
 for img in "$INPUT_DIR"/*; do
     if [ -f "$img" ]; then
@@ -256,8 +320,16 @@ for img in "$INPUT_DIR"/*; do
         ext_lower=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
         
         if [[ "$extensions_lower" == *"$ext_lower"* ]]; then
+            current_file=$((current_file + 1))
             filename=$(basename "$img")
-            log "Processing: $filename"
+            
+            # Show progress before processing each file
+            if [ "$SHOW_PROGRESS_BAR" = "true" ]; then
+                show_progress $current_file $total_files $start_time
+                echo ""  # New line after progress bar
+            fi
+            
+            log "Processing: $filename ($current_file/$total_files)"
             
             # Get image dimensions
             dimensions=$(identify -format "%w %h" "$img")
@@ -506,7 +578,19 @@ for img in "$INPUT_DIR"/*; do
     fi
 done
 
+# Print final newline and summary
+if [ "$SHOW_PROGRESS_BAR" = "true" ]; then
+    echo ""  # Final newline after progress bar
+fi
+
+# Calculate total time
+end_time=$(date +%s)
+total_time=$((end_time - start_time))
+total_min=$((total_time / 60))
+total_sec=$((total_time % 60))
+
 log "=== PhotoFramer Script Completed ==="
+log "Processed $total_files files in ${total_min}m ${total_sec}s"
 log "Complete log saved to: $LOG_FILE"
 
 exit 0
