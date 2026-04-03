@@ -145,26 +145,30 @@ show_progress() {
     local empty=$((50 - filled))
     
     # Calculate ETA
-    local current_time=$(date +%s)
+    local current_time
+    current_time=$(date +%s)
     local elapsed=$((current_time - start_time))
     local eta=0
     
-    if [ $current -gt 0 ]; then
-        local avg_time=$(echo "scale=2; $elapsed / $current" | bc)
+    if [ "$current" -gt 0 ]; then
+        # Use integer arithmetic to avoid floating point issues
+        # Multiply by 100 to preserve precision
+        local avg_time_ms=$((elapsed * 100 / current))
         local remaining=$((total - current))
-        eta=$(echo "scale=0; $avg_time * $remaining" | bc)
+        eta=$((avg_time_ms * remaining / 100))
     fi
     
     # Format ETA as mm:ss
     local eta_min=$((eta / 60))
     local eta_sec=$((eta % 60))
-    local eta_formatted=$(printf "%02d:%02d" $eta_min $eta_sec)
+    local eta_formatted
+    eta_formatted=$(printf "%02d:%02d" "$eta_min" "$eta_sec")
     
     # Build progress bar
     printf "\rProgress: ["
     for ((i=0; i<filled; i++)); do printf "#"; done
     for ((i=0; i<empty; i++)); do printf " "; done
-    printf "] %3d%% (%d/%d) ETA: %s" $percent $current $total "$eta_formatted"
+    printf "] %3d%% (%d/%d) ETA: %s" "$percent" "$current" "$total" "$eta_formatted"
 }
 
 # Function to convert DMS to decimal degrees
@@ -325,7 +329,7 @@ for img in "$INPUT_DIR"/*; do
             
             # Show progress before processing each file
             if [ "$SHOW_PROGRESS_BAR" = "true" ]; then
-                show_progress $current_file $total_files $start_time
+                show_progress "$current_file" "$total_files" "$start_time"
                 echo ""  # New line after progress bar
             fi
             
