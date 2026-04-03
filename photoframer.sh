@@ -25,13 +25,12 @@ SHOW_COORDINATES_AS_FALLBACK="false"
 NOMINATIM_ACCEPT_LANGUAGE="en"  # Request English results from Nominatim
 
 # Calculate vertical center position for bottom frame elements
-# Avatar height: 80px, we want it vertically centered in the 140px bottom frame
+# Avatar height: 80px, vertically centered in the 140px bottom frame
 # So offset from bottom: (140 - 80) / 2 = 30px from bottom
 AVATAR_OFFSET_FROM_BOTTOM=50
 
 # Text baseline: we want text aligned with middle of avatar
 # Font size 24, so text baseline offset from bottom: AVATAR_OFFSET_FROM_BOTTOM + (AVATAR_SIZE/2) - (FONT_SIZE/2)
-#TEXT_BASELINE_FROM_BOTTOM=$((AVATAR_OFFSET_FROM_BOTTOM + AVATAR_SIZE/2 - FONT_SIZE/2))
 TEXT_BASELINE_FROM_BOTTOM=$((AVATAR_OFFSET_FROM_BOTTOM + 20))
 
 # Right side text - single row, vertically centered
@@ -241,6 +240,7 @@ for img in "$INPUT_DIR"/*.jpg; do
         new_height=$((height + TOP_FRAME_HEIGHT + BOTTOM_FRAME_HEIGHT))
         
         # Get metadata
+        # Get metadata
         datetime=$(identify -format "%[EXIF:DateTimeOriginal]" "$img" 2>/dev/null)
         if [ -z "$datetime" ]; then
             datetime=$(date -r "$img" +"%Y:%m:%d %H:%M:%S")
@@ -250,10 +250,19 @@ for img in "$INPUT_DIR"/*.jpg; do
         date_part=$(echo "$datetime" | cut -d' ' -f1 | tr ':' '-')
         time_part=$(echo "$datetime" | cut -d' ' -f2)
 
-        # Convert to 12-hour format with AM/PM
-        hour=$(echo "$time_part" | cut -d':' -f1 | sed 's/^0//')
-        minute=$(echo "$time_part" | cut -d':' -f2)
+        # ================================================================
+        # FIXED TIME FORMATTING - Handles leading zeros safely
+        # ================================================================
+        # Parse time components safely by stripping leading zeros
+        hour=$(echo "$time_part" | cut -d':' -f1 | sed 's/^0*//')
+        minute=$(echo "$time_part" | cut -d':' -f2 | sed 's/^0*//')
+        second=$(echo "$time_part" | cut -d':' -f3 | sed 's/^0*//')
 
+        # Handle empty values (e.g., if stripping zeros removed everything)
+        [ -z "$hour" ] && hour=0
+        [ -z "$minute" ] && minute=0
+
+        # Convert to 12-hour format with AM/PM
         if [ "$hour" -ge 12 ]; then
             if [ "$hour" -eq 12 ]; then
                 display_hour=12
@@ -270,9 +279,10 @@ for img in "$INPUT_DIR"/*.jpg; do
             ampm="AM"
         fi
 
-        # Format with leading zero for minute only
+        # Format with leading zero for minute (printf with %02d handles this safely)
         time_formatted=$(printf "%d:%02d %s" "$display_hour" "$minute" "$ampm")
         datetime_combined="${date_part}  ·  ${time_formatted}"
+        # ================================================================
         
         # Get GPS coordinates
         log "  Extracting GPS coordinates..."
@@ -425,7 +435,6 @@ for img in "$INPUT_DIR"/*.jpg; do
         fi
         
         # Construct right side text (ISO, exposure, aperture, focal length)
-        # Using a bullet point or pipe separator for clarity
         right_text="${iso}        ${exposure}        ${aperture}        ${focal}"
         
         log "  Debug - Final values:"
@@ -456,7 +465,7 @@ for img in "$INPUT_DIR"/*.jpg; do
     fi
 done
 
-log "=== Image Framing Script Completed ==="
+log "=== PhotoFramer Script Completed ==="
 log "Complete log saved to: $LOG_FILE"
 
 exit 0
