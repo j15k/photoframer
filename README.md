@@ -149,7 +149,7 @@ photo.jpg (4928×3264 pixels)
 ### After framing
 
 ```
-photo.jpg (5028×3514 pixels)
+photo.jpg (4928×3264 pixels)
 - 50px top white bar
 - 50px left/right padding
 - 200px bottom bar with metadata
