@@ -8,24 +8,57 @@ PhotoFramer is a Bash shell script to add professional frames with EXIF metadata
 
 ## Features
 
-- Adds white frame with padding around photos
-- Displays photo metadata in bottom frame:
-  - Date & time (12-hour format)
-  - GPS location (reverse geocoded)
-  - Camera settings (ISO, exposure, aperture, focal length)
-- Adds custom avatar/logo to bottom frame
-- Preserves original image quality and DPI
-- Caches geocoding results to avoid rate limits
-- Progress bar with ETA for batch processing
+### Core Functionality
+
+- **Smart Framing**: Adds white frames with configurable padding (50px sides, 50px top, 200px bottom)
+- **EXIF Extraction**: Reads and displays camera metadata including ISO, shutter speed, aperture, and focal length
+- **GPS Geocoding**: Converts GPS coordinates to human-readable location names using OpenStreetMap's Nominatim API
+- **Branding Support**: Adds custom logo/avatar to bottom frame (preserves original DPI for print quality)
+
+
+### Metadata Display
+
+- **Left Side**: Location + date + time (12-hour format with AM/PM)
+- **Right Side**: Camera settings (ISO, exposure, aperture, focal length)
+- **Date Handling**: Extracts DateTimeOriginal from EXIF, falls back to file modification date
+- **Smart Formatting**: Converts decimal exposures to fractions (e.g., 0.004 → 1/250s)
+
+
+### Performance & Reliability
+
+- **Geocoding Cache**: Caches location lookups to avoid repeated API calls and respect rate limits
+- **Progress Tracking**: Visual progress bar with ETA for batch processing
+- **Comprehensive Logging**: Console output + detailed log file
+- **Graceful Degradation**: Handles missing metadata without crashing
+
+
+### Safety Features
+
+- **Directory Protection**: Prevents accidental overwrite of original images (input/output must differ)
+- **Dependency Checking**: Validates all required tools before processing
+- **Case-Insensitive**: Supports .jpg, .jpeg, .JPG, .JPEG, .png, .PNG
 
 
 ## Requirements
 
-### System Dependencies
+### System
+
+- Linux (bash 4.0+)
+- ImageMagick (identify + convert)
+- exiftool
+- bc, curl, jq, coreutils (realpath)
+
+#### Install
 
 ```bash
 sudo apt install imagemagick exiftool bc curl jq coreutils
 ```
+
+
+### Internet Access
+
+- [Nominatim](https://nominatim.org/) API access (free, no API key)
+- Valid email address required for API requests
 
 
 ### Font
