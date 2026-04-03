@@ -256,7 +256,6 @@ for img in "$INPUT_DIR"/*.jpg; do
         # Parse time components safely by stripping leading zeros
         hour=$(echo "$time_part" | cut -d':' -f1 | sed 's/^0*//')
         minute=$(echo "$time_part" | cut -d':' -f2 | sed 's/^0*//')
-        second=$(echo "$time_part" | cut -d':' -f3 | sed 's/^0*//')
 
         # Handle empty values (e.g., if stripping zeros removed everything)
         [ -z "$hour" ] && hour=0
