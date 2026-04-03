@@ -1,0 +1,18 @@
+# GENERAL 
+# files types
+*.*~
+.~lock.*
+.*#
+*.*~
+*.bak
+*.env
+*.gho
+*.log
+*.ods
+*.ori
+*.png
+*.swp
+*.swo
+*.tmp
+*.vim
+.goutputstream-*
