@@ -74,7 +74,7 @@ sudo apt install imagemagick exiftool bc curl jq coreutils
 
 ### What it does
 
-1. Scans `INPUT_DIR` for supported images (jpg, jpeg, png)
+1. Scans `INPUT_DIR` for supported images
 2. Extracts EXIF metadata and GPS coordinates
 3. Reverse-geocodes coordinates to location names
 4. Creates framed photo in `OUTPUT_DIR`
@@ -84,7 +84,10 @@ sudo apt install imagemagick exiftool bc curl jq coreutils
 ### Output Format
 
 **Top frame**: 50px white border  
+**Left frame**: 50px white border  
+**Right frame**: 50px white border  
 **Bottom frame**: 200px with:
+
 - Left: `City, Country  ·  YYYY-MM-DD  ·  HH:MM AM/PM`
 - Right: `ISO 100  1/250s  f/8  50mm`
 - Avatar/logo aligned left
