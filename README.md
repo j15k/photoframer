@@ -21,7 +21,6 @@ PhotoFramer is a Bash shell script to add professional frames with EXIF metadata
 
 ## Requirements
 
-
 ### System Dependencies
 
 ```bash
@@ -67,21 +66,31 @@ sudo apt install imagemagick exiftool bc curl jq coreutils
 
 ## Usage
 
+Make the script executable first:
 
-### Basic Usage
+```bash
+chmod +x photoframer.sh
+```
+
+Then run it from your Terminal:
 
 ```bash
 ./photoframer.sh
 ```
 
 
+### Basic Usage
+
+Simply execute the script in your Terminal. It will process all supported images in the configured input directory and save the framed versions to the output directory.
+
+
 ### What it does
 
 1. Scans `INPUT_DIR` for supported images
-2. Extracts EXIF metadata and GPS coordinates
-3. Reverse-geocodes coordinates to location names
-4. Creates framed photo in `OUTPUT_DIR`
-5. Preserves original files (input/output must differ)
+1. Extracts EXIF metadata and GPS coordinates
+1. Reverse-geocodes coordinates to location names
+1. Creates framed photo in `OUTPUT_DIR`
+1. Preserves original files (input/output must differ)
 
 
 ### Output Format
@@ -100,15 +109,15 @@ sudo apt install imagemagick exiftool bc curl jq coreutils
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `FRAME_PADDING` | 50 | Left/right padding in pixels |
-| `TOP_FRAME_HEIGHT` | 50 | Top frame height in pixels |
-| `BOTTOM_FRAME_HEIGHT` | 200 | Bottom frame height in pixels |
-| `FONT_SIZE` | 26 | Text size in points |
-| `TEXT_COLOR` | "#000000" | Text color (hex) |
-| `FRAME_COLOR` | "white" | Frame background color |
-| `AVATAR_SIZE` | 100 | Avatar size in pixels |
-| `SHOW_PROGRESS_BAR` | "true" | Show/hide progress indicator |
-| `SHOW_COORDINATES_AS_FALLBACK` | "false" | Show coordinates if no location name |
+| `FRAME_PADDING` | `50` | Left/right padding in pixels |
+| `TOP_FRAME_HEIGHT` | `50` | Top frame height in pixels |
+| `BOTTOM_FRAME_HEIGHT` | `200` | Bottom frame height in pixels |
+| `FONT_SIZE` | `26` | Text size in points |
+| `TEXT_COLOR` | `#000000` | Text color (hex) |
+| `FRAME_COLOR` | `white` | Frame background color |
+| `AVATAR_SIZE` | `100` | Avatar size in pixels |
+| `SHOW_PROGRESS_BAR` | `true` | Show/hide progress indicator |
+| `SHOW_COORDINATES_AS_FALLBACK` | `false` | Show coordinates if no location name |
 
 
 ### Geocoding Settings
@@ -121,7 +130,6 @@ sudo apt install imagemagick exiftool bc curl jq coreutils
 
 
 ## Examples
-
 
 ### Framed images
 
@@ -150,7 +158,6 @@ photo.jpg (5028×3514 pixels)
 
 
 ## Important Notes
-
 
 ### Directory Safety
 
