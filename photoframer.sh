@@ -6,7 +6,7 @@ set -euo pipefail
 
 INPUT_DIR="/home/user/Pictures/"
 OUTPUT_DIR="/home/user/Pictures/framed"
-SUPPORTED_EXTENSIONS="jpg jpeg JPG JPEG png PNG"
+SUPPORTED_EXTENSIONS=("jpg" "jpeg" "JPG" "JPEG" "png" "PNG")
 AVATAR="/home/user/Pictures/avatars/avatar.png"
 FONT="/home/user/.local/share/fonts/font.ttf"
 FONT_SIZE=26
@@ -220,260 +220,270 @@ fi
 log "=== Image Framing Script Started ==="
 log "Input directory: $INPUT_DIR"
 log "Output directory: $OUTPUT_DIR"
+log "Supported extensions: ${SUPPORTED_EXTENSIONS[*]}"
 log "Log file: $LOG_FILE"
 log "Geocoding cache: $CACHE_FILE"
 log "Avatar DPI: $AVATAR_DPI"
 log ""
 
-for img in "$INPUT_DIR"/*.jpg; do
+# Create lowercase version for case-insensitive matching
+extensions_lower=$(printf "%s\n" "${SUPPORTED_EXTENSIONS[@]}" | tr '[:upper:]' '[:lower:]' | tr '\n' '|')
+extensions_lower="${extensions_lower%|}"  # Remove trailing pipe
+
+for img in "$INPUT_DIR"/*; do
     if [ -f "$img" ]; then
-        filename=$(basename "$img")
-        log "Processing: $filename"
+        # Check extension case-insensitively
+        ext="${img##*.}"
+        ext_lower=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
         
-        # Get image dimensions
-        dimensions=$(identify -format "%w %h" "$img")
-        width=$(echo "$dimensions" | cut -d' ' -f1)
-        height=$(echo "$dimensions" | cut -d' ' -f2)
-        
-        # Calculate new dimensions for framed image
-        # Add frame on all sides: top, bottom, left, right
-        new_width=$((width + 2 * FRAME_PADDING))
-        new_height=$((height + TOP_FRAME_HEIGHT + BOTTOM_FRAME_HEIGHT))
-        
-        # Get metadata
-        # Get metadata
-        datetime=$(identify -format "%[EXIF:DateTimeOriginal]" "$img" 2>/dev/null)
-        if [ -z "$datetime" ]; then
-            datetime=$(date -r "$img" +"%Y:%m:%d %H:%M:%S")
-        fi
-
-        # Parse date and time
-        date_part=$(echo "$datetime" | cut -d' ' -f1 | tr ':' '-')
-        time_part=$(echo "$datetime" | cut -d' ' -f2)
-
-        # ================================================================
-        # FIXED TIME FORMATTING - Handles leading zeros safely
-        # ================================================================
-        # Parse time components safely by stripping leading zeros
-        hour=$(echo "$time_part" | cut -d':' -f1 | sed 's/^0*//')
-        minute=$(echo "$time_part" | cut -d':' -f2 | sed 's/^0*//')
-
-        # Handle empty values (e.g., if stripping zeros removed everything)
-        [ -z "$hour" ] && hour=0
-        [ -z "$minute" ] && minute=0
-
-        # Convert to 12-hour format with AM/PM
-        if [ "$hour" -ge 12 ]; then
-            if [ "$hour" -eq 12 ]; then
-                display_hour=12
-            else
-                display_hour=$((hour - 12))
+        if [[ "$extensions_lower" == *"$ext_lower"* ]]; then
+            filename=$(basename "$img")
+            log "Processing: $filename"
+            
+            # Get image dimensions
+            dimensions=$(identify -format "%w %h" "$img")
+            width=$(echo "$dimensions" | cut -d' ' -f1)
+            height=$(echo "$dimensions" | cut -d' ' -f2)
+            
+            # Calculate new dimensions for framed image
+            # Add frame on all sides: top, bottom, left, right
+            new_width=$((width + 2 * FRAME_PADDING))
+            new_height=$((height + TOP_FRAME_HEIGHT + BOTTOM_FRAME_HEIGHT))
+            
+            # Get metadata
+            datetime=$(identify -format "%[EXIF:DateTimeOriginal]" "$img" 2>/dev/null)
+            if [ -z "$datetime" ]; then
+                datetime=$(date -r "$img" +"%Y:%m:%d %H:%M:%S")
             fi
-            ampm="PM"
-        else
-            if [ "$hour" -eq 0 ]; then
-                display_hour=12
-            else
-                display_hour=$hour
-            fi
-            ampm="AM"
-        fi
 
-        # Format with leading zero for minute (printf with %02d handles this safely)
-        time_formatted=$(printf "%d:%02d %s" "$display_hour" "$minute" "$ampm")
-        datetime_combined="${date_part}  ·  ${time_formatted}"
-        # ================================================================
-        
-        # Get GPS coordinates
-        log "  Extracting GPS coordinates..."
-        
-        gps_lat_raw=$(exiftool -GPSLatitude -s3 "$img" 2>/dev/null | head -1)
-        gps_lon_raw=$(exiftool -GPSLongitude -s3 "$img" 2>/dev/null | head -1)
-        gps_lat_ref=$(exiftool -GPSLatitudeRef -s3 "$img" 2>/dev/null | head -1)
-        gps_lon_ref=$(exiftool -GPSLongitudeRef -s3 "$img" 2>/dev/null | head -1)
-        
-        location=""
-        
-        if [ -n "$gps_lat_raw" ] && [ -n "$gps_lon_raw" ] && 
-           [ "$gps_lat_raw" != "null" ] && [ "$gps_lon_raw" != "null" ] &&
-           [ "$gps_lat_raw" != "-" ] && [ "$gps_lon_raw" != "-" ]; then
-            
-            log "    GPS coordinates found: $gps_lat_raw, $gps_lon_raw"
-            
-            if [[ "$gps_lat_raw" == *"deg"* ]]; then
-                lat_decimal=$(dms_to_decimal "$gps_lat_raw" "${gps_lat_ref:-N}")
-                lon_decimal=$(dms_to_decimal "$gps_lon_raw" "${gps_lon_ref:-E}")
-            else
-                lat_decimal="$gps_lat_raw"
-                lon_decimal="$gps_lon_raw"
-            fi
-            
-            log "    Decimal coordinates: $lat_decimal, $lon_decimal"
-            
-            if [ -n "$lat_decimal" ] && [ -n "$lon_decimal" ] && 
-               [ "$lat_decimal" != "0" ] && [ "$lon_decimal" != "0" ]; then
-                
-                location_result=$(get_location "$lat_decimal" "$lon_decimal")
-                
-                if [ -n "$location_result" ]; then
-                    location="$location_result"
-                    log "    Location found: $location"
+            # Parse date and time
+            date_part=$(echo "$datetime" | cut -d' ' -f1 | tr ':' '-')
+            time_part=$(echo "$datetime" | cut -d' ' -f2)
+
+            # ================================================================
+            # FIXED TIME FORMATTING - Handles leading zeros safely
+            # ================================================================
+            # Parse time components safely by stripping leading zeros
+            hour=$(echo "$time_part" | cut -d':' -f1 | sed 's/^0*//')
+            minute=$(echo "$time_part" | cut -d':' -f2 | sed 's/^0*//')
+
+            # Handle empty values (e.g., if stripping zeros removed everything)
+            [ -z "$hour" ] && hour=0
+            [ -z "$minute" ] && minute=0
+
+            # Convert to 12-hour format with AM/PM
+            if [ "$hour" -ge 12 ]; then
+                if [ "$hour" -eq 12 ]; then
+                    display_hour=12
                 else
-                    if [ "$SHOW_COORDINATES_AS_FALLBACK" = "true" ]; then
-                        coordinates_display=$(printf "%.4f, %.4f" "$lat_decimal" "$lon_decimal")
-                        location="$coordinates_display"
-                        log "    Using coordinates as fallback: $location"
+                    display_hour=$((hour - 12))
+                fi
+                ampm="PM"
+            else
+                if [ "$hour" -eq 0 ]; then
+                    display_hour=12
+                else
+                    display_hour=$hour
+                fi
+                ampm="AM"
+            fi
+
+            # Format with leading zero for minute (printf with %02d handles this safely)
+            time_formatted=$(printf "%d:%02d %s" "$display_hour" "$minute" "$ampm")
+            datetime_combined="${date_part}  ·  ${time_formatted}"
+            # ================================================================
+            
+            # Get GPS coordinates
+            log "  Extracting GPS coordinates..."
+            
+            gps_lat_raw=$(exiftool -GPSLatitude -s3 "$img" 2>/dev/null | head -1)
+            gps_lon_raw=$(exiftool -GPSLongitude -s3 "$img" 2>/dev/null | head -1)
+            gps_lat_ref=$(exiftool -GPSLatitudeRef -s3 "$img" 2>/dev/null | head -1)
+            gps_lon_ref=$(exiftool -GPSLongitudeRef -s3 "$img" 2>/dev/null | head -1)
+            
+            location=""
+            
+            if [ -n "$gps_lat_raw" ] && [ -n "$gps_lon_raw" ] && 
+               [ "$gps_lat_raw" != "null" ] && [ "$gps_lon_raw" != "null" ] &&
+               [ "$gps_lat_raw" != "-" ] && [ "$gps_lon_raw" != "-" ]; then
+                
+                log "    GPS coordinates found: $gps_lat_raw, $gps_lon_raw"
+                
+                if [[ "$gps_lat_raw" == *"deg"* ]]; then
+                    lat_decimal=$(dms_to_decimal "$gps_lat_raw" "${gps_lat_ref:-N}")
+                    lon_decimal=$(dms_to_decimal "$gps_lon_raw" "${gps_lon_ref:-E}")
+                else
+                    lat_decimal="$gps_lat_raw"
+                    lon_decimal="$gps_lon_raw"
+                fi
+                
+                log "    Decimal coordinates: $lat_decimal, $lon_decimal"
+                
+                if [ -n "$lat_decimal" ] && [ -n "$lon_decimal" ] && 
+                   [ "$lat_decimal" != "0" ] && [ "$lon_decimal" != "0" ]; then
+                    
+                    location_result=$(get_location "$lat_decimal" "$lon_decimal")
+                    
+                    if [ -n "$location_result" ]; then
+                        location="$location_result"
+                        log "    Location found: $location"
                     else
-                        location=""
-                        log "    No location found"
+                        if [ "$SHOW_COORDINATES_AS_FALLBACK" = "true" ]; then
+                            coordinates_display=$(printf "%.4f, %.4f" "$lat_decimal" "$lon_decimal")
+                            location="$coordinates_display"
+                            log "    Using coordinates as fallback: $location"
+                        else
+                            location=""
+                            log "    No location found"
+                        fi
                     fi
                 fi
-            fi
-        else
-            log "    No GPS coordinates found"
-        fi
-        
-        # Get EXIF data - FOCAL LENGTH
-        focal=$(identify -format "%[EXIF:FocalLength]" "$img" 2>/dev/null | sed 's/[^0-9\/]//g')
-        if [ -n "$focal" ] && [ "$focal" != "null" ]; then
-            if [[ "$focal" == *"/"* ]]; then
-                num=$(echo "$focal" | cut -d'/' -f1)
-                den=$(echo "$focal" | cut -d'/' -f2)
-                if [ -n "$den" ] && [ "$den" -ne 0 ] 2>/dev/null; then
-                    focal=$(echo "scale=1; $num/$den" | bc)
-                else
-                    focal="$num"
-                fi
-            fi
-            focal="${focal}mm"
-        else
-            focal="--"
-        fi
-        
-        # Get EXIF data - APERTURE
-        aperture=$(identify -format "%[EXIF:FNumber]" "$img" 2>/dev/null)
-        if [ -n "$aperture" ] && [ "$aperture" != "null" ]; then
-            if [[ "$aperture" == *"/"* ]]; then
-                num=$(echo "$aperture" | cut -d'/' -f1)
-                den=$(echo "$aperture" | cut -d'/' -f2)
-                if [ -n "$den" ] && [ "$den" -ne 0 ] 2>/dev/null; then
-                    aperture=$(echo "scale=1; $num/$den" | bc)
-                else
-                    aperture="$num"
-                fi
-            fi
-            aperture="f/$aperture"
-        else
-            aperture="--"
-        fi
-        
-        # Get EXIF data - EXPOSURE
-        exposure=$(exiftool -ExposureTime -s3 "$img" 2>/dev/null | head -1)
-        if [ -n "$exposure" ] && [ "$exposure" != "null" ] && [ "$exposure" != "-" ]; then
-            # exiftool often returns fractions like "1/20"
-            if [[ "$exposure" == *"/"* ]]; then
-                exposure="${exposure}s"
             else
-                # If it's a decimal, try to convert to fraction
-                exposure_decimal="$exposure"
-                if (( $(echo "$exposure_decimal < 1" | bc -l) )); then
-                    denominator=$(echo "scale=0; 1 / $exposure_decimal + 0.5" | bc)
-                    exposure="1/${denominator}s"
-                else
-                    exposure="${exposure_decimal}s"
+                log "    No GPS coordinates found"
+            fi
+            
+            # Get EXIF data - FOCAL LENGTH
+            focal=$(identify -format "%[EXIF:FocalLength]" "$img" 2>/dev/null | sed 's/[^0-9\/]//g')
+            if [ -n "$focal" ] && [ "$focal" != "null" ]; then
+                if [[ "$focal" == *"/"* ]]; then
+                    num=$(echo "$focal" | cut -d'/' -f1)
+                    den=$(echo "$focal" | cut -d'/' -f2)
+                    if [ -n "$den" ] && [ "$den" -ne 0 ] 2>/dev/null; then
+                        focal=$(echo "scale=1; $num/$den" | bc)
+                    else
+                        focal="$num"
+                    fi
                 fi
+                focal="${focal}mm"
+            else
+                focal="--"
             fi
-        else
-            exposure="--"
-        fi
-        
-        # Get EXIF data - ISO (MULTIPLE METHODS)
-        iso="--"
-        
-        # Method 1: Direct EXIF tag with identify
-        iso_raw=$(identify -format "%[EXIF:ISOSpeedRatings]" "$img" 2>/dev/null | xargs)
-        if [ -n "$iso_raw" ] && [ "$iso_raw" != "null" ] && [ "$iso_raw" != "-" ]; then
-            iso_clean="${iso_raw//[^0-9]/}"
-            if [ -n "$iso_clean" ]; then
-                iso="ISO $iso_clean"
-                log "    ISO found via identify: $iso"
+            
+            # Get EXIF data - APERTURE
+            aperture=$(identify -format "%[EXIF:FNumber]" "$img" 2>/dev/null)
+            if [ -n "$aperture" ] && [ "$aperture" != "null" ]; then
+                if [[ "$aperture" == *"/"* ]]; then
+                    num=$(echo "$aperture" | cut -d'/' -f1)
+                    den=$(echo "$aperture" | cut -d'/' -f2)
+                    if [ -n "$den" ] && [ "$den" -ne 0 ] 2>/dev/null; then
+                        aperture=$(echo "scale=1; $num/$den" | bc)
+                    else
+                        aperture="$num"
+                    fi
+                fi
+                aperture="f/$aperture"
+            else
+                aperture="--"
             fi
-        fi
-        
-        # Method 2: Try ISO tag with identify
-        if [ "$iso" = "--" ]; then
-            iso_raw=$(identify -format "%[EXIF:ISO]" "$img" 2>/dev/null | xargs)
+            
+            # Get EXIF data - EXPOSURE (using exiftool to preserve fraction format)
+            exposure=$(exiftool -ExposureTime -s3 "$img" 2>/dev/null | head -1)
+            if [ -n "$exposure" ] && [ "$exposure" != "null" ] && [ "$exposure" != "-" ]; then
+                # exiftool often returns fractions like "1/20"
+                if [[ "$exposure" == *"/"* ]]; then
+                    exposure="${exposure}s"
+                else
+                    # If it's a decimal, try to convert to fraction
+                    exposure_decimal="$exposure"
+                    if (( $(echo "$exposure_decimal < 1" | bc -l) )); then
+                        denominator=$(echo "scale=0; 1 / $exposure_decimal + 0.5" | bc)
+                        exposure="1/${denominator}s"
+                    else
+                        exposure="${exposure_decimal}s"
+                    fi
+                fi
+            else
+                exposure="--"
+            fi
+            
+            # Get EXIF data - ISO (MULTIPLE METHODS)
+            iso="--"
+            
+            # Method 1: Direct EXIF tag with identify
+            iso_raw=$(identify -format "%[EXIF:ISOSpeedRatings]" "$img" 2>/dev/null | xargs)
             if [ -n "$iso_raw" ] && [ "$iso_raw" != "null" ] && [ "$iso_raw" != "-" ]; then
                 iso_clean="${iso_raw//[^0-9]/}"
                 if [ -n "$iso_clean" ]; then
                     iso="ISO $iso_clean"
-                    log "    ISO found via identify ISO tag: $iso"
+                    log "    ISO found via identify: $iso"
                 fi
             fi
-        fi
-        
-        # Method 3: Try exiftool
-        if [ "$iso" = "--" ]; then
-            for tag in "ISO" "ISOSpeed" "ISOSpeedRatings" "BaseISO" "RecommendedExposureIndex"; do
-                iso_raw=$(exiftool -$tag -s3 "$img" 2>/dev/null | head -1 | xargs)
+            
+            # Method 2: Try ISO tag with identify
+            if [ "$iso" = "--" ]; then
+                iso_raw=$(identify -format "%[EXIF:ISO]" "$img" 2>/dev/null | xargs)
                 if [ -n "$iso_raw" ] && [ "$iso_raw" != "null" ] && [ "$iso_raw" != "-" ]; then
                     iso_clean="${iso_raw//[^0-9]/}"
                     if [ -n "$iso_clean" ]; then
                         iso="ISO $iso_clean"
-                        log "    ISO found via exiftool ($tag): $iso"
-                        break
+                        log "    ISO found via identify ISO tag: $iso"
                     fi
                 fi
-            done
-        fi
-        
-        # Method 4: Try exiftool with verbose output as last resort
-        if [ "$iso" = "--" ]; then
-            iso_raw=$(exiftool -EXIF:ISO -s3 "$img" 2>/dev/null | head -1 | xargs)
-            if [ -n "$iso_raw" ] && [ "$iso_raw" != "null" ] && [ "$iso_raw" != "-" ]; then
-                iso_clean="${iso_raw//[^0-9]/}"
-                if [ -n "$iso_clean" ]; then
-                    iso="ISO $iso_clean"
-                    log "    ISO found via exiftool EXIF:ISO: $iso"
+            fi
+            
+            # Method 3: Try exiftool
+            if [ "$iso" = "--" ]; then
+                for tag in "ISO" "ISOSpeed" "ISOSpeedRatings" "BaseISO" "RecommendedExposureIndex"; do
+                    iso_raw=$(exiftool -$tag -s3 "$img" 2>/dev/null | head -1 | xargs)
+                    if [ -n "$iso_raw" ] && [ "$iso_raw" != "null" ] && [ "$iso_raw" != "-" ]; then
+                        iso_clean="${iso_raw//[^0-9]/}"
+                        if [ -n "$iso_clean" ]; then
+                            iso="ISO $iso_clean"
+                            log "    ISO found via exiftool ($tag): $iso"
+                            break
+                        fi
+                    fi
+                done
+            fi
+            
+            # Method 4: Try exiftool with verbose output as last resort
+            if [ "$iso" = "--" ]; then
+                iso_raw=$(exiftool -EXIF:ISO -s3 "$img" 2>/dev/null | head -1 | xargs)
+                if [ -n "$iso_raw" ] && [ "$iso_raw" != "null" ] && [ "$iso_raw" != "-" ]; then
+                    iso_clean="${iso_raw//[^0-9]/}"
+                    if [ -n "$iso_clean" ]; then
+                        iso="ISO $iso_clean"
+                        log "    ISO found via exiftool EXIF:ISO: $iso"
+                    fi
                 fi
             fi
+            
+            # Construct left side text (location + date/time)
+            if [ -n "$location" ]; then
+                left_text="${location}  ·  ${datetime_combined}"
+            else
+                left_text="${datetime_combined}"
+            fi
+            
+            # Construct right side text (ISO, exposure, aperture, focal length)
+            right_text="${iso}        ${exposure}        ${aperture}        ${focal}"
+            
+            log "  Debug - Final values:"
+            log "    Left text: $left_text"
+            log "    Right text: $right_text"
+            
+            # Create framed image with metadata
+            # First, create canvas, then composite the image on top
+            # Avatar is resized to exact dimensions while preserving original DPI for print quality
+            convert -size "${new_width}x${new_height}" xc:"$FRAME_COLOR" \
+                "$img" -geometry +${FRAME_PADDING}+${TOP_FRAME_HEIGHT} -composite \
+                -font "$FONT" \
+                -pointsize $FONT_SIZE \
+                \( "$AVATAR" -resize ${AVATAR_SIZE}x${AVATAR_SIZE} -density "${AVATAR_DPI}" -units PixelsPerInch -background none \) \
+                -gravity southwest \
+                -geometry +${FRAME_PADDING}+${AVATAR_OFFSET_FROM_BOTTOM} \
+                -composite \
+                -gravity southwest \
+                -fill "$TEXT_COLOR" \
+                -annotate +$((FRAME_PADDING + AVATAR_SIZE + FRAME_PADDING - 4))+${LEFT_TEXT_FROM_BOTTOM} "$left_text" \
+                -gravity southeast \
+                -fill "$TEXT_COLOR" \
+                -annotate +${FRAME_PADDING}+${RIGHT_TEXT_FROM_BOTTOM} "$right_text" \
+                "$OUTPUT_DIR/$filename" >> "$LOG_FILE" 2>&1
+            
+            log "  Saved to: $OUTPUT_DIR/$filename"
+            log ""
         fi
-        
-        # Construct left side text (location + date/time)
-        if [ -n "$location" ]; then
-            left_text="${location}  ·  ${datetime_combined}"
-        else
-            left_text="${datetime_combined}"
-        fi
-        
-        # Construct right side text (ISO, exposure, aperture, focal length)
-        right_text="${iso}        ${exposure}        ${aperture}        ${focal}"
-        
-        log "  Debug - Final values:"
-        log "    Left text: $left_text"
-        log "    Right text: $right_text"
-        
-        # Create framed image with metadata
-        # First, create canvas, then composite the image on top
-        # Avatar is resized to exact dimensions while preserving original DPI for print quality
-        convert -size "${new_width}x${new_height}" xc:"$FRAME_COLOR" \
-            "$img" -geometry +${FRAME_PADDING}+${TOP_FRAME_HEIGHT} -composite \
-            -font "$FONT" \
-            -pointsize $FONT_SIZE \
-            \( "$AVATAR" -resize ${AVATAR_SIZE}x${AVATAR_SIZE} -density "${AVATAR_DPI}" -units PixelsPerInch -background none \) \
-            -gravity southwest \
-            -geometry +${FRAME_PADDING}+${AVATAR_OFFSET_FROM_BOTTOM} \
-            -composite \
-            -gravity southwest \
-            -fill "$TEXT_COLOR" \
-            -annotate +$((FRAME_PADDING + AVATAR_SIZE + FRAME_PADDING - 4))+${LEFT_TEXT_FROM_BOTTOM} "$left_text" \
-            -gravity southeast \
-            -fill "$TEXT_COLOR" \
-            -annotate +${FRAME_PADDING}+${RIGHT_TEXT_FROM_BOTTOM} "$right_text" \
-            "$OUTPUT_DIR/$filename" >> "$LOG_FILE" 2>&1
-        
-        log "  Saved to: $OUTPUT_DIR/$filename"
-        log ""
     fi
 done
 
