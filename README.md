@@ -210,18 +210,20 @@ You can find many examples of images framed with PhotoFramer here:
 - [Pixelfed: @j15k](https://pixelfed.social/j15k)
 - [Mastodon: @j15k](https://mastodon.social/@j15k)
 - [Bluesky: @j15k.com](https://bsky.app/profile/j15k.com)
+- [Instagram: @j15k_com](https://www.instagram.com/j15k_com)
+- [Tumblr: @j15k](https://j15k.tumblr.com/)
 
 
 ### Before framing
 
 ```
-photo.jpg (4928×3264 pixels)
+photo.jpg (4096 × 3072 pixels)
 ```
 
 ### After framing
 
 ```
-photo.jpg (4928×3264 pixels)
+photo.jpg (4096 × 3072 pixels)
 - 50px top white bar
 - 50px left/right padding
 - 200px bottom bar with metadata
