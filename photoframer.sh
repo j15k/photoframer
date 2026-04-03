@@ -30,7 +30,7 @@ NOMINATIM_ACCEPT_LANGUAGE="en"  # Request English results from Nominatim
 # So offset from bottom: (140 - 80) / 2 = 30px from bottom
 AVATAR_OFFSET_FROM_BOTTOM=50
 
-# Text baseline: we want text aligned with middle of avatar
+# Text baseline: text aligned with middle of avatar
 # Font size 24, so text baseline offset from bottom: AVATAR_OFFSET_FROM_BOTTOM + (AVATAR_SIZE/2) - (FONT_SIZE/2)
 TEXT_BASELINE_FROM_BOTTOM=$((AVATAR_OFFSET_FROM_BOTTOM + 20))
 
@@ -43,6 +43,13 @@ LEFT_TEXT_FROM_BOTTOM=$TEXT_BASELINE_FROM_BOTTOM
 # VALIDATE DEPENDENCIES
 # ============================================================================
 echo "Checking dependencies..."
+
+# Check realpath
+if ! command -v realpath &> /dev/null; then
+    echo "ERROR: realpath not found."
+    echo "Please install: sudo apt install coreutils -y"
+    exit 1
+fi
 
 # Check ImageMagick
 if ! command -v identify &> /dev/null || ! command -v convert &> /dev/null; then
@@ -93,6 +100,18 @@ fi
 
 echo "All dependencies satisfied."
 echo ""
+
+# ============================================================================
+# DIRECTORY SAFETY CHECK
+# ============================================================================
+
+# Check if INPUT_DIR equals OUTPUT_DIR
+if [ "$(realpath "$INPUT_DIR")" = "$(realpath "$OUTPUT_DIR")" ]; then
+    echo "ERROR: Input and output directories are the same!" >&2
+    echo "This would overwrite your original images." >&2
+    echo "Please use different directories." >&2
+    exit 1
+fi
 
 # ============================================================================
 # FUNCTIONS
