@@ -6,6 +6,45 @@
 PhotoFramer is a Bash shell script to add professional frames with EXIF metadata and geolocation to your photos.
 
 
+## Table of Contents
+
+- [Features](#features)
+   * [Core Functionality](#core-functionality)
+   * [Metadata Display](#metadata-display)
+   * [Performance & Reliability](#performance--reliability)
+   * [Safety Features](#safety-features)
+- [Requirements](#requirements)
+   * [System](#system)
+      + [Install](#install)
+   * [Internet Access](#internet-access)
+   * [Font](#font)
+   * [Avatar/Logo](#avatarlogo)
+- [Installation](#installation)
+- [Usage](#usage)
+   * [Basic Usage](#basic-usage)
+   * [What it does](#what-it-does)
+   * [Output Format](#output-format)
+- [Configuration](#configuration)
+   * [Geocoding Settings](#geocoding-settings)
+- [Examples](#examples)
+   * [Framed images](#framed-images)
+   * [Before framing](#before-framing)
+   * [After framing](#after-framing)
+- [Important Notes](#important-notes)
+   * [Directory Safety](#directory-safety)
+   * [Geocoding API](#geocoding-api)
+   * [Image Formats](#image-formats)
+- [Troubleshooting](#troubleshooting)
+   * ["Input and output directories are the same"](#input-and-output-directories-are-the-same)
+   * [No location found](#no-location-found)
+   * [Missing EXIF data](#missing-exif-data)
+   * [Font warnings](#font-warnings)
+- [Logging](#logging)
+- [Contributing](#contributing)
+- [License](#license)
+- [Credits](#credits)
+
+
 ## Features
 
 ### Core Functionality
